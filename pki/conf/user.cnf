@@ -1,0 +1,32 @@
+# User certificate request
+
+# This file is used by the openssl req command. Since we cannot know the DN in
+# advance the user is prompted for DN information.
+
+[ req ]
+default_bits            = 2048                  # RSA key size
+encrypt_key             = yes                   # Protect private key
+default_md              = sha256                # MD to use
+utf8                    = yes                   # Input is UTF-8
+string_mask             = utf8only              # Emit UTF-8 strings
+prompt                  = yes                   # Prompt for DN
+distinguished_name      = user_dn               # DN template
+req_extensions          = user_reqext           # Desired extensions
+
+[ user_dn ]
+domainComponent         = "Domain Component (eg, acme.com)"
+organizationName        = "Organization Name (eg, ACME)"
+organizationalUnitName  = "Organization Unit Name (eg, IT department)"
+commonName              = "Common Name (eg, full name)"
+emailAddress            = "Email Address (eg, name@fqdn)"
+UID                     = "User Identifier (eg, username)"
+
+domainComponent_default         = "softquadrat.de"
+organizationName_default        = "SoftQuadrat GmbH"
+organizationalUnitName_default  = "Datasqill"
+
+
+[ user_reqext ]
+keyUsage                = critical,digitalSignature,keyEncipherment
+extendedKeyUsage        = clientAuth
+subjectKeyIdentifier    = hash

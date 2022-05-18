@@ -125,6 +125,14 @@ Then, in **Settings** tab, you have to set at least one **Valid Redirect URI** u
 
 As we set our **Access Type** to `confidential`, then we must specify how is the user identified.
 
+##### Disable Refresh Tokens
+
+It is possible to disable the use of a **Refresh Token** when setting up the client. Refresh tokens can be used by applications to request a new access token without the user intervention.
+
+Go to the section **OpenID Connect Compatibility Modes** and uncheck **Use refresh Tokens**:
+
+![](assets/disable-refresh-tokens.png)
+
 #### Setup the authentication flow for X.509 certificate authentication
 
 Flows are sequences of steps to authenticate users in KC (or achieve any action related with authentication), and we can create our own custom flows. They can be applied to different user interactions with KC (connecting via a web browser, resetting credentials, direct access to its REST API, ...).

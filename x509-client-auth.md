@@ -4,7 +4,7 @@ To enable X.509 client authentication in the KC auth server, follow the next ste
 
 ## Setting up the configuration file
 
-This configuration should be applied before running KC through the `${kc.home.dir}/conf/keycloak.conf` properties file:
+This configuration should be applied before running KC in the `${kc.home.dir}/conf/keycloak.conf` properties file:
 
 ### Setting server certificate
 
@@ -111,43 +111,31 @@ To configure the validity time and when a token expires, we must go to **Realm S
 
 #### Create a client
 
-Clients are the resource servers and we must configure at least one to be able to authenticate and authorize users.
+Clients are the applications which want to log users in to get an access token and we must configure at least one to be able to authenticate and authorize users.
 
 Go to **Clients** section on the left panel and click on **Create** under **Lookup** tab:
 
 ![Create client](assets/create-client.png)
 
-Enter a **Client ID** (e.g. `dev`), which is needed when the user application request a token, set `openid-connect` as **Client Porotocol** (the alternative is `saml`), and finally click on **Save**:
+Enter a **Client ID** (e.g. `datasqill-client`, which is needed when the client application request an access token), set `openid-connect` as **Client Protocol**, and finally click on **Save**:
 
 ![Set new client ID](assets/set-new-client-id.png)
 
-Then, in the **Settings** tab, you have to set at least one **Valid Redirect URI** with the resource server URL and set **Access Type** to `confidential` (clients require credentials to log in), and click on **Save** again:
+Then, in the **Settings** tab, we have to set a **Description** (e.g. `Datasqill Client Application`), set **Access Type** to `public` (clients do not require a secret), disable **Standard Flow** (not necessary for us, as we only need direct access grants; this flow is for showing a login form to users and then redirect them to an specific URL after a successful login), enable **Direct Access Grants** (the clients already have the users' certificates, that is, their credentials, so it is not necessary to request them) and click on **Save** again:
 
 ![New client settings](assets/new-client-settings.png)
 
-As we set our **Access Type** to `confidential`, then we must specify how the user is identified.
-
-Finally, under **Credentials** tab, we must indicate that the user's credentials to get an access token are extracted  from the certificate:
-
-![client credentials](assets/client-credentials.png)
-
-- **Client Authenticator**: authenticator used to authenticate clients.
-
-- **Subject DN**: regular expression for validating Subject DN.
-
-- **Allow Regex Pattern Comparison**: the Subject DN from given client certificate should match regular expression specified by **Subject DN** property.
-
 ##### Disable Refresh Tokens
 
-It is possible to disable the use of a **Refresh Token** when setting up the client. Refresh tokens can be used by applications to request a new access token without the user intervention. 
+It is possible to disable the use of a **Refresh Token** when setting up the client. Refresh tokens can be used by clients to request a new access token without the user intervention. 
 
-> In our case, as we are using certificates for authentication configured in the user application, don't need refresh tokens.
+> In our case, as we are using direct access grants (clients always know user credentials, as they are user certificates), don't need refresh tokens.
 
-Go to the section **OpenID Connect Compatibility Modes** and uncheck **Use refresh Tokens**:
+Go to the section **OpenID Connect Compatibility Modes** and disable **Use refresh Tokens**:
 
 ![Disable refresh tokens](assets/disable-refresh-tokens.png)
 
-#### Set up a flow for X.509 certificate authentication
+#### Add a flow for X.509 certificate authentication
 
 Flows are sequences of steps to authenticate users in KC (or achieve any action related with authentication), and we can create our own custom flows. They can be applied to different user interactions with KC (connecting via a web browser, resetting credentials, direct access to its REST API, ...).
 
@@ -173,19 +161,23 @@ After creating the flow execution, we have to configure it expanding **Actions**
 
 ![](assets/config-authflow.png)
 
-As mutual TLS is enabled, KC server got the user's certificate when the connection with the client is established. If the connection was established, it means that the user has a valid certificate (it was trusted with the CA certificate which is stored in the previously configured truststore).
+As mutual TLS is enabled, KC server got the user's certificate when the connection is established. If the connection could be established, it means that the user has a valid certificate (it was trusted with the CA certificate which is stored in the previously configured truststore).
 
 So, now, we have to specify how to extract the user identity from this certificate.
 
-In our case, we want to extract the user ID from the SubjectDN using a regular expression, so we choose `Match SubjectDN using a regular expression` in **User Identity Source**, set `UID=(.*?)(?:$)` as regular expression (in a reg.exp., parenthesis defines groups, and they are used to specify which part of the Subject DN will be extracted), and finally, in **User Mapping Method** we set `Username or Email`, in order to use these fields to find the user in the users database (so, the extracted data from the Subject DN must match with the username or email of any user in the KC users database). Finally, click **Save** at the bottom of the form.
+In our case, we want to extract the user ID from the Subject DN using a regular expression, so we choose `Match SubjectDN using a regular expression`. 
+
+Then, set  **User Identity Source** with `UID=(.*?)(?:$)`. In a regular expression, parenthesis defines groups, and they are used to specify which part of the Subject DN will be extracted.
+
+Finally, in **User Mapping Method** we set `Username or Email`, in order to use these fields to find the user in the users database (so, the extracted user identifier from the Subject DN must match with the `username` or `email` attributes of a user in the KC users database). 
+
+Finally, click **Save** at the bottom of the form.
 
 ![](assets/setup-x509-authflow.png)
 
 Now, we have to use our new custom flow to enable direct grant access to the KC server, so valid users can request access tokens to KC through its REST API. So, go to **Authentication > Bindings** and choose `X509` as **Direct Grant Flow**, and don't forgot to click on **Save**:
 
 ![](assets/direct-grant-flow-x509.png)
-
-
 
 Remember that your users have to exist in the KC user database or in any of the federated (Active Directory, LDAP) or custom (Service Provider Interface module) user identity providers.
 

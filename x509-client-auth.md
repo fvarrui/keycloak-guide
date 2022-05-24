@@ -24,7 +24,7 @@ https-key-store-password=*****
 
 ### Enabling mutual TLS (mTLS)
 
-KC also need a truststore to store certificates to verify clients that are communicating with KC, required to enable X.509 client authentication:
+KC also needs a truststore to store certificates to verify clients, required to enable X.509 client authentication:
 
 ```properties
 # Enabling mutual TLS
@@ -39,51 +39,51 @@ https-trust-store-password=*****
 
 In our case, the truststore only contains the CA certificate, because it is the root of all the certificates that we want to consider as valid. It is also possible to add each and every one of the client certificates that we want to validate (e.g., if clients use self-signed certificates), but it's not what we want.
 
-## Administrator console
+## Administration console
 
 After you made changes in the configuration file and run KC, then you have to manage it by accessing through a browser:
 
-![](assets/administrator-console.png)
+![Administration Console](assets/administration-console.png)
 
 Then click on **Administration Console**:
 
-![](assets/login.png)
+![Login](assets/login.png)
 
 Enter administrator credentials (these credentials are set the first time KC is run) and you will be logged in:
 
-![](assets/logged-in.png)
+![Logged in](assets/logged-in.png)
 
 #### Create a realm
 
 On the top-left corner, click on **Master > Add realm**:
 
-![](assets/create-realm.png)
+![Create realm](assets/create-realm.png)
 
 Enter a name for the new realm (e.g.: `datasqill`, better in lowercase) and click on **Create**:
 
-![](assets/set-new-realm-name.png)
+![Set new realm name](assets/set-new-realm-name.png)
 
 > It is possible to import all realm configuration from a JSON file with the **Import** option.
 
-![](assets/realm-created.png)
+![Realm created](assets/realm-created.png)
 
 And now we have a new realm called `datasqill`. The default configuration in this tab is valid for our purposes. As you can see, by default our new realm supports OpenID Connect and SAML, despite we need only the first one.
 
-#### Set private key for signing issued JWTs
+#### Set private key for signing JWTs
 
 Go to **Realm Settings > Keys**:
 
-![](assets/realm-keys.png)
+![Realm keys](assets/realm-keys.png)
 
 Click on **Providers** option under **Keys** tab, and choose `java-keystore"` on the **Add keystore...** dropdown list:
 
-![](assets/add-keystore.png)
+![Add keystore](assets/add-keystore.png)
 
 And then, fill the form as follows an click on **Save**:
 
-![](assets/fill-new-keystore-data.png) 
+![Fill in new keystore data](assets/fill-new-keystore-data.png) 
 
-- **Priority**: if there is more than one private key for signing tokens, it will choose the valid key that has the highest priority (e.g.: 200, to make it higher to KC's default private keys).
+- **Priority**: if there is more than one private key for signing tokens, it will choose the valid (not expired) key with the highest priority (e.g.: 200, to make it higher than KC's default keys).
 
 - **Algorithm**: alg. used when signing (e.g. RSA256)
 
@@ -95,45 +95,59 @@ And then, fill the form as follows an click on **Save**:
 
 - **Key Password**: password of the key.
 
-- **Key use**: "sig" for singing tokens ("enc" would be for encryption).
+- **Key use**: "sig" for singing tokens ("enc" for encryption).
 
 Then, we can see our new siging key active and in first position:
 
-![](C:\Users\fvarrui\softquadrat\keycloak\docs\assets\new-siging-key.png)
+![New signing key](assets/new-siging-key.png)
 
-#### Setup token validity
+#### Set up token validity
 
 To configure the validity time and when a token expires, we must go to **Realm Settings > Tokens** tab:
 
-![](assets/setup-issued-tokens.png)
+![Set up issued tokens](assets/setup-issued-tokens.png)
+
+>  By default, access tokens are valid for 5 minutes.
 
 #### Create a client
 
-Clients are the resource servers and we must configure at least one to be able to authenticate and authorize users:
+Clients are the resource servers and we must configure at least one to be able to authenticate and authorize users.
 
 Go to **Clients** section on the left panel and click on **Create** under **Lookup** tab:
 
-![](assets/create-client.png)
+![Create client](assets/create-client.png)
 
-Introduce a **Client ID** (e.g. `transformation`), which is needed when the user application request a token, set `openid-connect` as **Client Porotocol** (the alternative is `saml`), and finally click on **Save**:
+Enter a **Client ID** (e.g. `dev`), which is needed when the user application request a token, set `openid-connect` as **Client Porotocol** (the alternative is `saml`), and finally click on **Save**:
 
-![](assets/set-new-client-id.png)
+![Set new client ID](assets/set-new-client-id.png)
 
-Then, in **Settings** tab, you have to set at least one **Valid Redirect URI** using the auth server URL (e.g.), set **Access Type** to `confidential` and activate **Authorization Enabled** (this will automatically activate **Service Accounts Enabled**):
+Then, in the **Settings** tab, you have to set at least one **Valid Redirect URI** with the resource server URL and set **Access Type** to `confidential` (clients require credentials to log in), and click on **Save** again:
 
-![](assets/new-client-settings.png)
+![New client settings](assets/new-client-settings.png)
 
-As we set our **Access Type** to `confidential`, then we must specify how is the user identified.
+As we set our **Access Type** to `confidential`, then we must specify how the user is identified.
+
+Finally, under **Credentials** tab, we must indicate that the user's credentials to get an access token are extracted  from the certificate:
+
+![client credentials](assets/client-credentials.png)
+
+- **Client Authenticator**: authenticator used to authenticate clients.
+
+- **Subject DN**: regular expression for validating Subject DN.
+
+- **Allow Regex Pattern Comparison**: the Subject DN from given client certificate should match regular expression specified by **Subject DN** property.
 
 ##### Disable Refresh Tokens
 
-It is possible to disable the use of a **Refresh Token** when setting up the client. Refresh tokens can be used by applications to request a new access token without the user intervention.
+It is possible to disable the use of a **Refresh Token** when setting up the client. Refresh tokens can be used by applications to request a new access token without the user intervention. 
+
+> In our case, as we are using certificates for authentication configured in the user application, don't need refresh tokens.
 
 Go to the section **OpenID Connect Compatibility Modes** and uncheck **Use refresh Tokens**:
 
-![](assets/disable-refresh-tokens.png)
+![Disable refresh tokens](assets/disable-refresh-tokens.png)
 
-#### Setup the authentication flow for X.509 certificate authentication
+#### Set up a flow for X.509 certificate authentication
 
 Flows are sequences of steps to authenticate users in KC (or achieve any action related with authentication), and we can create our own custom flows. They can be applied to different user interactions with KC (connecting via a web browser, resetting credentials, direct access to its REST API, ...).
 
@@ -171,9 +185,9 @@ Now, we have to use our new custom flow to enable direct grant access to the KC 
 
 ![](assets/direct-grant-flow-x509.png)
 
-That's all!
 
-Remember that your users have to exist in the KC user database or in any of the federated (Active Directory, LDAP) or custom (Service Provider Interface module) user identitify providers.
+
+Remember that your users have to exist in the KC user database or in any of the federated (Active Directory, LDAP) or custom (Service Provider Interface module) user identity providers.
 
 # References
 

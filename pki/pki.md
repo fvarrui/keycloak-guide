@@ -306,7 +306,7 @@ prompt                  = yes                   # Prompt for DN
 distinguished_name      = server_dn             # DN template
 req_extensions          = server_reqext         # Desired extensions
 
-[ user_dn ]
+[ server_dn ]
 domainComponent         = "Domain Component (eg, acme.com)"
 organizationName        = "Organization Name (eg, ACME)"
 organizationalUnitName  = "Organization Unit Name (eg, IT department)"
@@ -317,7 +317,7 @@ organizationName_default        = "SoftQuadrat GmbH"
 organizationalUnitName_default  = "Datasqill"
 
 
-[ user_reqext ]
+[ server_reqext ]
 keyUsage                = critical,digitalSignature,keyEncipherment
 extendedKeyUsage        = serverAuth,clientAuth
 subjectKeyIdentifier    = hash

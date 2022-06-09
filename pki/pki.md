@@ -234,7 +234,7 @@ After running last command, we have created the `ca/root-ca.jks` keystore file c
 
 ### Create user certificates
 
-First we have to create a the request configuration file `conf/user.cnf` with the next content:
+First we have to create the request configuration file `conf/user.cnf` with the next content:
 
 ```ini
 # User certificate request
@@ -277,7 +277,7 @@ Then, with the `openssl req -new` command we create the private key and CSR 
 openssl req -new -config conf/user.cnf -out certs/fran.csr -keyout certs/fran.key
 ```
 
-Finally, we use the signing CA to issue the user certificate:
+Finally, we use the signing CA to sign the user certificate:
 
 ```bash
 openssl ca -config conf/root-ca.cnf -in certs/fran.csr -out certs/fran.crt -extensions user_ext -policy user_pol -batch
@@ -289,7 +289,56 @@ A copy of the certificate is saved in the certificate archive under the name `c
 
 ### Create servers certificates
 
-[TODO]
+Create a request configuration file `conf/server.cnf` with the next content:
+
+```ini
+# Server certificate request
+
+# This file is used by the openssl req command.
+
+[ req ]
+default_bits            = 2048                  # RSA key size
+encrypt_key             = yes                   # Protect private key
+default_md              = sha256                # MD to use
+utf8                    = yes                   # Input is UTF-8
+string_mask             = utf8only              # Emit UTF-8 strings
+prompt                  = yes                   # Prompt for DN
+distinguished_name      = server_dn             # DN template
+req_extensions          = server_reqext         # Desired extensions
+
+[ user_dn ]
+domainComponent         = "Domain Component (eg, acme.com)"
+organizationName        = "Organization Name (eg, ACME)"
+organizationalUnitName  = "Organization Unit Name (eg, IT department)"
+commonName              = "Common Name (eg, FQDN)"
+
+domainComponent_default         = "softquadrat.de"
+organizationName_default        = "SoftQuadrat GmbH"
+organizationalUnitName_default  = "Datasqill"
+
+
+[ user_reqext ]
+keyUsage                = critical,digitalSignature,keyEncipherment
+extendedKeyUsage        = serverAuth,clientAuth
+subjectKeyIdentifier    = hash
+subjectAlternativeName  = DNS:server.domain.name
+```
+
+> Don't forget to set the server domain name with the `DNS:` preffix. `subjectAlternativeName` can be a comma separated list of domain names. This field is important so that certificate can not be used for different servers than specified in the SAN field.
+
+As we did to create user certificates, with the `openssl req -new` command we create the private key and CSR (certificate request) for ther server certificate. When prompted enter the required DN components (leave fields empty if are not necessary):
+
+```bash
+openssl req -new -config conf/server.cnf -out certs/my-server.csr -keyout certs/my-server.key
+```
+
+Sign the request using the signing CA private key:
+
+```bash
+openssl ca -config conf/root-ca.cnf -in certs/my-server.csr -out certs/my-server.crt -extensions server_ext -policy user_pol -batch
+```
+
+> Note that in this case we are using the same naming policy as for user certificates (`user_pol`), but a different extension (`server_ext`), since we want to set the same DN components as for user certificates.
 
 # References
 
